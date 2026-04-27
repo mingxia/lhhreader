@@ -3,74 +3,52 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>连环画阅读器 UI 原型</title>
+    <title>连环画双页阅读器</title>
     <link rel="stylesheet" href="./reader.css" />
   </head>
   <body>
     <div class="reader-shell" id="readerShell">
       <header class="topbar ui-layer" id="topbar">
-        <button class="btn" id="backBtn">← 返回</button>
-        <div class="title-wrap">
-          <strong>西游记：三打白骨精</strong>
-          <span>连环画阅读器</span>
-        </div>
-        <div class="controls">
-          <button class="btn" id="modeBtn">双页</button>
-          <button class="btn" id="fitWidthBtn">适应宽度</button>
-          <button class="btn" id="fitHeightBtn">适应高度</button>
-          <button class="btn" id="zoomOutBtn">-</button>
-          <button class="btn" id="zoomResetBtn">100%</button>
-          <button class="btn" id="zoomInBtn">+</button>
-          <button class="btn" id="fullscreenBtn">全屏 (F)</button>
-        </div>
+        <div class="brand">连环画书房</div>
+        <div class="book-meta" id="bookMeta">示例连环画（可导入 PDF）</div>
+        <label class="btn file-upload" for="pdfInput">导入 PDF</label>
+        <input id="pdfInput" type="file" accept="application/pdf" hidden />
       </header>
 
-      <main class="canvas" id="canvas">
-        <div class="hotzone hotzone-left" data-action="prev" aria-label="上一页"></div>
-        <div class="hotzone hotzone-center" data-action="toggle-ui" aria-label="显示或隐藏 UI"></div>
-        <div class="hotzone hotzone-right" data-action="next" aria-label="下一页"></div>
+      <main class="stage" id="stage" aria-label="双页阅读区域">
+        <button class="turn-zone turn-left" id="prevBtn" aria-label="上一跨页"></button>
 
-        <section class="spread" id="spread">
-          <article class="paper" id="leftPaper">
+        <section class="book" id="book">
+          <div class="book-thickness book-thickness-left" aria-hidden="true"></div>
+
+          <article class="page page-left" id="leftPage">
             <img id="leftImage" alt="左页" />
-            <span class="paper-number" id="leftNumber"></span>
+            <span class="page-number" id="leftNumber"></span>
           </article>
-          <article class="paper" id="rightPaper">
+
+          <div class="book-spine" aria-hidden="true"></div>
+
+          <article class="page page-right" id="rightPage">
             <img id="rightImage" alt="右页" />
-            <span class="paper-number" id="rightNumber"></span>
+            <span class="page-number" id="rightNumber"></span>
           </article>
+
+          <div class="book-thickness book-thickness-right" aria-hidden="true"></div>
         </section>
+
+        <button class="turn-zone turn-right" id="nextBtn" aria-label="下一跨页"></button>
       </main>
 
       <footer class="toolbar ui-layer" id="toolbar">
-        <div class="page-status" id="pageStatus">1 / 12</div>
-        <input id="progressRange" type="range" min="1" max="12" value="1" />
-        <div class="toolbar-actions">
-          <button class="btn" id="prevBtn">上一页</button>
-          <button class="btn" id="nextBtn">下一页</button>
-          <span class="zoom-label" id="zoomLabel">100%</span>
-        </div>
+        <button class="btn" id="toggleUiBtn">隐藏界面</button>
+        <button class="btn" id="zoomOutBtn">缩小</button>
+        <span class="zoom-label" id="zoomLabel">100%</span>
+        <button class="btn" id="zoomInBtn">放大</button>
+        <button class="btn" id="zoomResetBtn">重置</button>
+        <div class="page-status" id="pageStatus">1–2 / 12</div>
       </footer>
-
-      <aside class="recommend-panel ui-layer" id="recommendPanel">
-        <h3>推荐阅读</h3>
-        <div class="cards">
-          <a href="#" class="card">
-            <span>水浒传·景阳冈</span>
-            <small>古典名著</small>
-          </a>
-          <a href="#" class="card">
-            <span>岳飞传·朱仙镇</span>
-            <small>历史故事</small>
-          </a>
-          <a href="#" class="card">
-            <span>封神演义·哪吒闹海</span>
-            <small>神话传说</small>
-          </a>
-        </div>
-      </aside>
     </div>
 
-    <script src="./reader.js"></script>
+    <script type="module" src="./reader.js"></script>
   </body>
 </html>
