@@ -1,137 +1,171 @@
-const totalPages = 12;
-const sampleImages = Array.from({ length: totalPages }, () => "../c8aeba54-6e23-4044-a7ba-eafb6bba4bfe.png");
+import * as pdfjsLib from "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.3.136/build/pdf.min.mjs";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.3.136/build/pdf.worker.min.mjs";
+
+const fallbackTotalPages = 12;
+const fallbackImages = Array.from(
+  { length: fallbackTotalPages },
+  () => "../c8aeba54-6e23-4044-a7ba-eafb6bba4bfe.png"
+);
 
 const state = {
-  page: 1,
-  mode: "spread",
+  spreadIndex: 0,
   zoom: 100,
-  fit: "height",
   uiVisible: true,
+  pages: fallbackImages,
+  title: "示例连环画",
 };
 
 const el = {
   shell: document.getElementById("readerShell"),
-  spread: document.getElementById("spread"),
-  leftPaper: document.getElementById("leftPaper"),
-  rightPaper: document.getElementById("rightPaper"),
+  book: document.getElementById("book"),
   leftImage: document.getElementById("leftImage"),
   rightImage: document.getElementById("rightImage"),
   leftNumber: document.getElementById("leftNumber"),
   rightNumber: document.getElementById("rightNumber"),
   pageStatus: document.getElementById("pageStatus"),
-  progressRange: document.getElementById("progressRange"),
   zoomLabel: document.getElementById("zoomLabel"),
-  modeBtn: document.getElementById("modeBtn"),
-  fullscreenBtn: document.getElementById("fullscreenBtn"),
-  recommendPanel: document.getElementById("recommendPanel"),
+  pdfInput: document.getElementById("pdfInput"),
+  bookMeta: document.getElementById("bookMeta"),
+  toolbar: document.getElementById("toolbar"),
+  topbar: document.getElementById("topbar"),
 };
-
-el.progressRange.max = String(totalPages);
-let uiTimer;
 
 function clamp(num, min, max) {
   return Math.min(Math.max(num, min), max);
 }
 
-function getSpreadPages() {
-  if (state.mode === "single") {
-    return [state.page, null];
-  }
+function spreadCount() {
+  return Math.ceil(state.pages.length / 2);
+}
 
-  if (state.page <= 1) {
-    return [1, null];
-  }
-
-  const left = state.page % 2 === 0 ? state.page : state.page - 1;
-  const right = left + 1 <= totalPages ? left + 1 : null;
+function getCurrentSpreadPages() {
+  const left = state.spreadIndex * 2 + 1;
+  const right = left + 1 <= state.pages.length ? left + 1 : null;
   return [left, right];
 }
 
-function applyScale() {
+function applyZoom() {
   const scale = state.zoom / 100;
   [el.leftImage, el.rightImage].forEach((img) => {
     img.style.transform = `scale(${scale})`;
   });
+  el.zoomLabel.textContent = `${state.zoom}%`;
 }
 
 function render() {
-  const [left, right] = getSpreadPages();
+  const [leftPageNo, rightPageNo] = getCurrentSpreadPages();
+  el.leftImage.src = state.pages[leftPageNo - 1] || "";
+  el.leftNumber.textContent = `第 ${leftPageNo} 页`;
 
-  el.spread.classList.toggle("single", state.mode === "single");
-  el.rightPaper.style.display = right ? "block" : "none";
-
-  el.leftImage.src = sampleImages[left - 1];
-  el.leftNumber.textContent = `第 ${left} 页`;
-
-  if (right) {
-    el.rightImage.src = sampleImages[right - 1];
-    el.rightNumber.textContent = `第 ${right} 页`;
-  }
-
-  el.pageStatus.textContent = state.mode === "spread" && right ? `${left}–${right} / ${totalPages}` : `${left} / ${totalPages}`;
-  el.progressRange.value = String(state.page);
-  el.zoomLabel.textContent = `${state.zoom}%`;
-  el.modeBtn.textContent = state.mode === "spread" ? "双页" : "单页";
-
-  applyScale();
-}
-
-function toggleUI(forceVisible) {
-  if (typeof forceVisible === "boolean") {
-    state.uiVisible = forceVisible;
+  if (rightPageNo) {
+    el.rightImage.style.visibility = "visible";
+    el.rightImage.src = state.pages[rightPageNo - 1];
+    el.rightNumber.textContent = `第 ${rightPageNo} 页`;
+    el.rightNumber.style.visibility = "visible";
   } else {
-    state.uiVisible = !state.uiVisible;
+    el.rightImage.style.visibility = "hidden";
+    el.rightImage.src = "";
+    el.rightNumber.style.visibility = "hidden";
   }
-  el.shell.classList.toggle("ui-hidden", !state.uiVisible);
+
+  el.pageStatus.textContent = rightPageNo
+    ? `${leftPageNo}–${rightPageNo} / ${state.pages.length}`
+    : `${leftPageNo} / ${state.pages.length}`;
+
+  applyZoom();
 }
 
-function startUIFadeTimer() {
-  clearTimeout(uiTimer);
-  toggleUI(true);
-  uiTimer = setTimeout(() => toggleUI(false), 1500);
+function animateTurn(direction) {
+  const cls = direction === "next" ? "turn-next" : "turn-prev";
+  el.book.classList.remove("turn-next", "turn-prev");
+  el.book.classList.add(cls);
+  setTimeout(() => el.book.classList.remove(cls), 340);
 }
 
-function nextPage() {
-  if (state.mode === "spread") {
-    state.page = clamp(state.page + 2, 1, totalPages);
-  } else {
-    state.page = clamp(state.page + 1, 1, totalPages);
-  }
+function nextSpread() {
+  const maxIndex = spreadCount() - 1;
+  if (state.spreadIndex >= maxIndex) return;
+  state.spreadIndex = clamp(state.spreadIndex + 1, 0, maxIndex);
+  animateTurn("next");
   render();
 }
 
-function prevPage() {
-  if (state.mode === "spread") {
-    state.page = clamp(state.page - 2, 1, totalPages);
-  } else {
-    state.page = clamp(state.page - 1, 1, totalPages);
-  }
+function prevSpread() {
+  if (state.spreadIndex <= 0) return;
+  state.spreadIndex = clamp(state.spreadIndex - 1, 0, spreadCount() - 1);
+  animateTurn("prev");
   render();
 }
 
-function setFit(mode) {
-  state.fit = mode;
-  if (mode === "height") {
-    el.spread.style.height = "calc(100vh - 240px)";
-    el.spread.style.width = "min(1200px, calc(100vw - 60px))";
-  } else {
-    el.spread.style.height = "auto";
-    el.spread.style.width = "min(1400px, calc(100vw - 40px))";
-  }
+let hideUiTimer;
+function showUiTemporarily() {
+  clearTimeout(hideUiTimer);
+  state.uiVisible = true;
+  el.shell.classList.remove("ui-hidden");
+  hideUiTimer = setTimeout(() => {
+    if (!state.uiVisible) return;
+    el.shell.classList.add("ui-hidden");
+  }, 2200);
 }
 
-document.getElementById("modeBtn").addEventListener("click", () => {
-  state.mode = state.mode === "spread" ? "single" : "spread";
-  render();
+function toggleUiPinned() {
+  const willHide = !el.shell.classList.contains("ui-hidden");
+  el.shell.classList.toggle("ui-hidden", willHide);
+  state.uiVisible = !willHide;
+  const button = document.getElementById("toggleUiBtn");
+  button.textContent = willHide ? "显示界面" : "隐藏界面";
+}
+
+async function pdfToImages(file) {
+  const data = await file.arrayBuffer();
+  const task = pdfjsLib.getDocument({ data });
+  const pdf = await task.promise;
+  const urls = [];
+
+  for (let i = 1; i <= pdf.numPages; i += 1) {
+    const page = await pdf.getPage(i);
+    const viewport = page.getViewport({ scale: 2.1 });
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d", { alpha: false });
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: context, viewport }).promise;
+    urls.push(canvas.toDataURL("image/jpeg", 0.9));
+  }
+
+  return urls;
+}
+
+el.pdfInput.addEventListener("change", async (event) => {
+  const [file] = event.target.files || [];
+  if (!file) return;
+
+  el.bookMeta.textContent = "正在转换 PDF…";
+  try {
+    const pages = await pdfToImages(file);
+    if (!pages.length) throw new Error("empty_pdf");
+    state.pages = pages;
+    state.spreadIndex = 0;
+    state.title = file.name;
+    el.bookMeta.textContent = `${file.name} · 共 ${pages.length} 页（双页翻书模式）`;
+    render();
+  } catch (error) {
+    console.error(error);
+    el.bookMeta.textContent = "PDF 转换失败，请重试其他文件";
+  }
 });
 
+document.getElementById("nextBtn").addEventListener("click", nextSpread);
+document.getElementById("prevBtn").addEventListener("click", prevSpread);
+
 document.getElementById("zoomInBtn").addEventListener("click", () => {
-  state.zoom = clamp(state.zoom + 10, 50, 250);
+  state.zoom = clamp(state.zoom + 10, 50, 220);
   render();
 });
 
 document.getElementById("zoomOutBtn").addEventListener("click", () => {
-  state.zoom = clamp(state.zoom - 10, 50, 250);
+  state.zoom = clamp(state.zoom - 10, 50, 220);
   render();
 });
 
@@ -140,63 +174,22 @@ document.getElementById("zoomResetBtn").addEventListener("click", () => {
   render();
 });
 
-document.getElementById("fitWidthBtn").addEventListener("click", () => setFit("width"));
-document.getElementById("fitHeightBtn").addEventListener("click", () => setFit("height"));
-
-document.getElementById("prevBtn").addEventListener("click", prevPage);
-document.getElementById("nextBtn").addEventListener("click", nextPage);
-
-document.getElementById("fullscreenBtn").addEventListener("click", async () => {
-  if (!document.fullscreenElement) {
-    await document.documentElement.requestFullscreen();
-  } else {
-    await document.exitFullscreen();
-  }
-});
-
-el.progressRange.addEventListener("input", (event) => {
-  state.page = Number(event.target.value);
-  render();
-});
-
-document.querySelectorAll(".hotzone").forEach((zone) => {
-  zone.addEventListener("click", (event) => {
-    const action = event.currentTarget.dataset.action;
-    if (action === "prev") prevPage();
-    if (action === "next") nextPage();
-    if (action === "toggle-ui") toggleUI();
-  });
-});
-
-["mousemove", "keydown", "click", "touchstart"].forEach((eventName) => {
-  document.addEventListener(eventName, startUIFadeTimer, { passive: true });
-});
+document.getElementById("toggleUiBtn").addEventListener("click", toggleUiPinned);
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "ArrowRight" || event.key === " ") {
     event.preventDefault();
-    nextPage();
+    nextSpread();
   }
-
-  if (event.key === "ArrowLeft" || (event.shiftKey && event.key === " ")) {
+  if (event.key === "ArrowLeft") {
     event.preventDefault();
-    prevPage();
-  }
-
-  if (event.key.toLowerCase() === "f") {
-    event.preventDefault();
-    el.fullscreenBtn.click();
+    prevSpread();
   }
 });
 
-document.addEventListener("fullscreenchange", () => {
-  const isFullscreen = Boolean(document.fullscreenElement);
-  el.recommendPanel.style.display = isFullscreen ? "none" : "block";
-});
-
-document.getElementById("backBtn").addEventListener("click", () => {
-  history.back();
+["mousemove", "click", "touchstart", "keydown"].forEach((eventName) => {
+  document.addEventListener(eventName, showUiTemporarily, { passive: true });
 });
 
 render();
-startUIFadeTimer();
+showUiTemporarily();
