@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>连环画阅读器 UI 原型</title>
+    <link rel="stylesheet" href="./reader.css" />
+  </head>
+  <body>
+    <div class="reader-shell" id="readerShell">
+      <header class="topbar ui-layer" id="topbar">
+        <button class="btn" id="backBtn">← 返回</button>
+        <div class="title-wrap">
+          <strong>西游记：三打白骨精</strong>
+          <span>连环画阅读器</span>
+        </div>
+        <div class="controls">
+          <button class="btn" id="modeBtn">双页</button>
+          <button class="btn" id="fitWidthBtn">适应宽度</button>
+          <button class="btn" id="fitHeightBtn">适应高度</button>
+          <button class="btn" id="zoomOutBtn">-</button>
+          <button class="btn" id="zoomResetBtn">100%</button>
+          <button class="btn" id="zoomInBtn">+</button>
+          <button class="btn" id="fullscreenBtn">全屏 (F)</button>
+        </div>
+      </header>
+
+      <main class="canvas" id="canvas">
+        <div class="hotzone hotzone-left" data-action="prev" aria-label="上一页"></div>
+        <div class="hotzone hotzone-center" data-action="toggle-ui" aria-label="显示或隐藏 UI"></div>
+        <div class="hotzone hotzone-right" data-action="next" aria-label="下一页"></div>
+
+        <section class="spread" id="spread">
+          <article class="paper" id="leftPaper">
+            <img id="leftImage" alt="左页" />
+            <span class="paper-number" id="leftNumber"></span>
+          </article>
+          <article class="paper" id="rightPaper">
+            <img id="rightImage" alt="右页" />
+            <span class="paper-number" id="rightNumber"></span>
+          </article>
+        </section>
+      </main>
+
+      <footer class="toolbar ui-layer" id="toolbar">
+        <div class="page-status" id="pageStatus">1 / 12</div>
+        <input id="progressRange" type="range" min="1" max="12" value="1" />
+        <div class="toolbar-actions">
+          <button class="btn" id="prevBtn">上一页</button>
+          <button class="btn" id="nextBtn">下一页</button>
+          <span class="zoom-label" id="zoomLabel">100%</span>
+        </div>
+      </footer>
+
+      <aside class="recommend-panel ui-layer" id="recommendPanel">
+        <h3>推荐阅读</h3>
+        <div class="cards">
+          <a href="#" class="card">
+            <span>水浒传·景阳冈</span>
+            <small>古典名著</small>
+          </a>
+          <a href="#" class="card">
+            <span>岳飞传·朱仙镇</span>
+            <small>历史故事</small>
+          </a>
+          <a href="#" class="card">
+            <span>封神演义·哪吒闹海</span>
+            <small>神话传说</small>
+          </a>
+        </div>
+      </aside>
+    </div>
+
+    <script src="./reader.js"></script>
+  </body>
+</html>
